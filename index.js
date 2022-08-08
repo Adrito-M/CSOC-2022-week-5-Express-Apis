@@ -2,7 +2,8 @@ const express = require("express");
 const { json, urlencoded } = require("body-parser");
 const cors = require("cors");
 const mongoose = require("mongoose");
-
+const { validateToken } = require("./middleware")
+require('dotenv').config()
 const { ToDoRoutes, UserRoutes } = require("./routes");
 
 const app = express();
@@ -14,8 +15,9 @@ app.use(cors());
 // disable powered by cookies
 app.disable("x-powered-by");
 
-app.use("/api/auth", UserRoutes);
-app.use("/api/todo", ToDoRoutes);
+app.use("/api/auth", validateToken, UserRoutes);
+app.use("/api/todo", validateToken, ToDoRoutes);
+
 
 const PORT = process.env.PORT || 8000;
 const mongoDB = "mongodb://127.0.0.1/my_database";
@@ -25,6 +27,7 @@ mongoose.set("useCreateIndex", true);
 mongoose
   .connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
+    console.log('MongoDB connection established')
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

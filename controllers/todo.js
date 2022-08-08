@@ -1,33 +1,84 @@
-const { ToDo, Token } = require("../models");
-
-// All the given method require token.
-// So be sure to check for it before doing any stuff
-// HINT: Create a middleware for above :)
+const { ToDo } = require("../models");
 
 const getAllToDo = async (req, res) => {
-  // Get the token in header.
-  // Use the token to get all the ToDo's of a user
+
+  const todos = await ToDo.find({createdBy: req.token.user})
+  
+  res.status(200).send(todos.map(todo => ({
+      id: todo._id,
+      title: todo.title,
+  })))
 };
 
 const createToDo = async (req, res) => {
-  // Check for the token and create a todo
-  // or throw error correspondingly
+
+  if (!req.body.title) {
+    res.status(400).send({message: "Title not found"})
+    return
+  }
+
+  const newTodo = await ToDo.create({
+    title: req.body.title,
+    createdBy: req.token.user
+  })
+
+  res.status(200).send({
+    id: newTodo._id,
+    title: newTodo.title
+  })
 };
 
 const getParticularToDo = async (req, res) => {
-  // Get the Todo of the logged in user with given id.
+  const todo = await ToDo.findOne({createdBy: req.token.user, _id: req.params.id})
+  if (!todo) {
+    res.status(404).send({message: "No Todo found with id " + req.params.id})
+    return
+  }
+  res.status(200).send({id: todo._id, title: todo.title})
 };
 
 const editToDo = async (req, res) => {
-  // Change the title of the Todo with given id, and get the new title as response.
+  if (!req.body.title) {
+    res.status(400).send({message: "Title not found"})
+  }
+
+  const todo = await ToDo.findOne({createdBy: req.token.user, _id: req.params.id})
+
+  if (!todo) {
+    res.status(404).send({message: "No Todo found with id " + req.params.id})
+    return
+  }
+  todo.title = req.body.title
+  await todo.save()
+  res.status(200).send({id: todo._id, title: todo.title})
 };
 
 const editToDoPatch = async (req, res) => {
-  // Change the title of the Todo with given id, and get the new title as response
+  if (!req.body.title) {
+    res.status(400).send({message: "Title not found"})
+  }
+
+  const todo = await ToDo.findOne({createdBy: req.token.user, _id: req.params.id})
+
+  if (!todo) {
+    res.status(404).send({message: "No Todo found with id " + req.params.id})
+    return
+  }
+  todo.title = req.body.title
+  await todo.save()
+  res.status(200).send({id: todo._id, title: todo.title})
 };
 
 const deleteToDo = async (req, res) => {
-  //  Delete the todo with given id
+  const todo = await ToDo.findOne({createdBy: req.token.user, _id: req.params.id})
+
+  if (!todo) {
+    res.status(404).send({message: "No Todo found with id " + req.params.id})
+    return
+  }
+
+  await todo.delete()
+  res.sendStatus(204)
 };
 
 module.exports = {
